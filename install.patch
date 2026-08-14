@@ -1,0 +1,200 @@
+diff --git a/packages/api/remotes/package.json b/packages/api/remotes/package.json
+index 42a7d14070..5ad4a0c9b1 100644
+--- a/packages/api/remotes/package.json
++++ b/packages/api/remotes/package.json
+@@ -66,6 +66,7 @@
+     "@deepseek-ai/dsh-goal": "workspace:^",
+     "@deepseek-ai/dsh-cordis-host-runner": "workspace:^",
+     "@deepseek-ai/dsh-host-plugin-inventory": "workspace:^",
++    "@deepseek-ai/dsh-host-restart": "workspace:^",
+     "@deepseek-ai/dsh-invariants": "workspace:^",
+     "@deepseek-ai/dsh-agent-presets": "workspace:^",
+     "@deepseek-ai/dsh-llm": "workspace:^",
+@@ -83,6 +84,7 @@
+     "@deepseek-ai/dsh-goal": "workspace:^",
+     "@deepseek-ai/dsh-cordis-host-runner": "workspace:^",
+     "@deepseek-ai/dsh-host-plugin-inventory": "workspace:^",
++    "@deepseek-ai/dsh-host-restart": "workspace:^",
+     "@deepseek-ai/dsh-invariants": "workspace:^",
+     "@deepseek-ai/dsh-agent-presets": "workspace:^",
+     "@deepseek-ai/dsh-llm": "workspace:^",
+diff --git a/packages/api/remotes/src/client/index.ts b/packages/api/remotes/src/client/index.ts
+index 210ec0bf80..23da1d306f 100644
+--- a/packages/api/remotes/src/client/index.ts
++++ b/packages/api/remotes/src/client/index.ts
+@@ -6,14 +6,17 @@ import goalsRemote from '@deepseek-ai/dsh-goal/remote'
+ import dynamicRemote from '@deepseek-ai/dsh-cordis-host-runner/remote'
+ import pluginInventoryRemote from '@deepseek-ai/dsh-host-plugin-inventory/remote'
+ import messageFeedbackRemote from '@deepseek-ai/dsh-message-feedback/remote'
++import restartRemote from '@deepseek-ai/dsh-host-restart/remote'
+ import type { TypertClientRemote } from '@deepseek-ai/dsh-typert-protocol'
+ 
+ export type { TypertClientRemote as ClientRemote } from '@deepseek-ai/dsh-typert-protocol'
+ export type { PluginInventorySnapshot } from '@deepseek-ai/dsh-host-plugin-inventory/types'
++export type { RestartAck } from '@deepseek-ai/dsh-host-restart/types'
+ export type {} from '@deepseek-ai/dsh-commands/remote'
+ export type {} from '@deepseek-ai/dsh-goal/remote'
+ export type {} from '@deepseek-ai/dsh-host-plugin-inventory/remote'
+ export type {} from '@deepseek-ai/dsh-message-feedback/remote'
++export type {} from '@deepseek-ai/dsh-host-restart/remote'
+ // The forwarded-event allowlist's selection seat: without it in the consumer's
+ // compilation face `TypertRemoteEvent` is `never` and every `$on` call fails.
+ export type { ApiRemoteForwardedEvent } from '../types.ts'
+@@ -106,7 +109,7 @@ export async function apply(ctx: Context): Promise<() => Promise<void>> {
+   const disposers: Array<() => Promise<void>> = []
+   try {
+     for (const contribution of [
+-      commandsRemote, goalsRemote, dynamicRemote, pluginInventoryRemote, messageFeedbackRemote,
++      commandsRemote, goalsRemote, dynamicRemote, pluginInventoryRemote, messageFeedbackRemote, restartRemote,
+     ]) {
+       disposers.push(await ctx.remote.$mount(contribution))
+     }
+diff --git a/packages/api/remotes/tsconfig.client.json b/packages/api/remotes/tsconfig.client.json
+index a0161dd047..699d0ba7b7 100644
+--- a/packages/api/remotes/tsconfig.client.json
++++ b/packages/api/remotes/tsconfig.client.json
+@@ -36,6 +36,9 @@
+     {
+       "path": "../../host/plugin-inventory"
+     },
++    {
++      "path": "../../host/restart"
++    },
+     {
+       "path": "../../interaction/commands"
+     },
+diff --git a/packages/bundle/web-app/cordis.patch.yml b/packages/bundle/web-app/cordis.patch.yml
+index b06e63b54f..0fdde481e8 100644
+--- a/packages/bundle/web-app/cordis.patch.yml
++++ b/packages/bundle/web-app/cordis.patch.yml
+@@ -94,6 +94,10 @@
+     - id: plugin-inventory
+       name: '@deepseek-ai/dsh-host-plugin-inventory'
+ 
++    # One-click backend restart: the Host Remote the settings row calls.
++    - id: restart
++      name: '@deepseek-ai/dsh-host-restart'
++
+     # The API gateway: the transport-agnostic dispatch face every client shape
+     # shares. The base layer's agent-default-model service owns the default model.
+     - id: api-gateway
+@@ -195,6 +199,11 @@
+     - id: ui-settings-plugin-inventory
+       name: '@deepseek-ai/dsh-client-ui-settings-plugin-inventory'
+ 
++    # Backend restart: the one-click restart row in General settings, backed
++    # by the restart Host Remote.
++    - id: ui-settings-restart
++      name: '@deepseek-ai/dsh-client-ui-settings-restart'
++
+     - id: ui-conversation
+       name: '@deepseek-ai/dsh-client-ui-conversation'
+ 
+diff --git a/packages/bundle/web-app/package.json b/packages/bundle/web-app/package.json
+index ca4709a2a9..5d86b86eab 100644
+--- a/packages/bundle/web-app/package.json
++++ b/packages/bundle/web-app/package.json
+@@ -65,6 +65,7 @@
+     "@deepseek-ai/dsh-client-ui-model-selection": "workspace:^",
+     "@deepseek-ai/dsh-client-ui-settings-models": "workspace:^",
+     "@deepseek-ai/dsh-client-ui-settings-plugin-inventory": "workspace:^",
++    "@deepseek-ai/dsh-client-ui-settings-restart": "workspace:^",
+     "@deepseek-ai/dsh-client-ui-permission-presets": "workspace:^",
+     "@deepseek-ai/dsh-client-ui-plan": "workspace:^",
+     "@deepseek-ai/dsh-client-ui-settings-plugins": "workspace:^",
+@@ -92,6 +93,7 @@
+     "@deepseek-ai/dsh-host-directory-picker-browse": "workspace:^",
+     "@deepseek-ai/dsh-host-directory-picker-native": "workspace:^",
+     "@deepseek-ai/dsh-host-plugin-inventory": "workspace:^",
++    "@deepseek-ai/dsh-host-restart": "workspace:^",
+     "@deepseek-ai/dsh-host-webserver": "workspace:^",
+     "@deepseek-ai/dsh-message-feedback": "workspace:^",
+     "@deepseek-ai/dsh-session-projection-cache": "workspace:^",
+diff --git a/packages/extensions/ui-cordis/src/client/index.ts b/packages/extensions/ui-cordis/src/client/index.ts
+index a757f08f15..a84a3277a6 100644
+--- a/packages/extensions/ui-cordis/src/client/index.ts
++++ b/packages/extensions/ui-cordis/src/client/index.ts
+@@ -36,6 +36,23 @@ export const inject = [
+   'slots', 'locale', 'inputTriggers', 'remote', 'remote.dynamicCordisRunner', 'dynamicCordisRunner',
+ ]
+ 
++/**
++ * sessionStorage flag armed by the frontend-refresh settings action
++ * (@deepseek-ai/dsh-client-ui-settings-restart). Kept as a shared string
++ * literal: cross-plugin value imports are forbidden by the client bundle
++ * purity gate. Consumed once per page load.
++ */
++const REATTACH_FLAG = 'dsh:reattach-cordis-runs'
++
++/** Whether the current page load was a frontend-only refresh asking to re-attach active runs. */
++function reattachArmed(): boolean {
++  try {
++    return sessionStorage.getItem(REATTACH_FLAG) === '1'
++  } catch {
++    return false
++  }
++}
++
+ /** Mount every Cordis browser surface over the shared Host inventory. */
+ export function apply(ctx: ClientContext): void {
+   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'ui-cordis: dictionaries')
+@@ -68,7 +85,34 @@ export function apply(ctx: ClientContext): void {
+   ctx.effect(() => inventory.subscribe(() => {
+     const snapshot = inventory.getSnapshot()
+     if (snapshot.read) runner.reconcileApprovals(snapshot.rows)
+-  }), 'ui-cordis: reconcile pending approvals')
++    // One-shot re-attach after a frontend-only refresh (see
++    // @deepseek-ai/dsh-client-ui-settings-restart's REATTACH_FLAG): restore
++    // the Client halves of active dynamic Plugins so creation-mode hot
++    // plugins survive the reload. The Host half stays untouched — the
++    // runner's attach path reuses the live run instead of restarting it.
++    if (snapshot.read && reattachArmed()) {
++      try {
++        sessionStorage.removeItem(REATTACH_FLAG)
++      } catch {
++        // Storage refusal must not block the re-attach.
++      }
++      for (const row of snapshot.rows) {
++        const run = row.activeRun
++        if (run === undefined) continue
++        if (row.latestRun?.approvalRequestId !== undefined) continue
++        if (runner.isLoaded(row.pluginId)) continue
++        const pkg = row.packages.find(candidate => candidate.packageId === run.packageId)
++        if (pkg?.hasClientHalf !== true) continue
++        void runner.startUserRun({
++          agentId: row.agentId,
++          pluginId: row.pluginId,
++          packageId: run.packageId,
++          mode: 'run',
++          hasClientHalf: true,
++        })
++      }
++    }
++  }), 'ui-cordis: reconcile pending approvals and reattach runs after frontend refresh')
+ 
+   ctx.remote.$on('cordis/dynamic-package', () => { inventory.refresh() })
+   ctx.remote.$on('cordis/dynamic-retract', () => { inventory.refresh() })
+diff --git a/tsconfig.client.json b/tsconfig.client.json
+index e599f76f1b..5bf6b39b2c 100644
+--- a/tsconfig.client.json
++++ b/tsconfig.client.json
+@@ -91,6 +91,7 @@
+     { "path": "./packages/client/ui-settings-general" },
+     { "path": "./packages/client/ui-settings-models" },
+     { "path": "./packages/client/ui-settings-plugin-inventory" },
++    { "path": "./packages/client/ui-settings-restart" },
+     { "path": "./packages/client/locale" },
+     { "path": "./packages/client/web" },
+     { "path": "./apps/web" }
+diff --git a/tsconfig.host.json b/tsconfig.host.json
+index 459036247a..eafcb51539 100644
+--- a/tsconfig.host.json
++++ b/tsconfig.host.json
+@@ -293,6 +293,7 @@
+     { "path": "./packages/lsp/lsp" },
+     { "path": "./packages/lsp/lsp-stdio" },
+     { "path": "./packages/lsp/tool-lsp" },
++    { "path": "./packages/host/restart" },
+     { "path": "./apps/cli" }
+   ]
+ }
