@@ -19,13 +19,13 @@ window.__ModuleLoader__.load({
 		}
 		var RestartDialog_module_css_default = {
 			"actions": "TMPLta_actions",
-			"card": "TMPLta_card",
-			"cancel": "TMPLta_cancel",
-			"detail": "TMPLta_detail",
 			"title": "TMPLta_title",
+			"body": "TMPLta_body",
+			"detail": "TMPLta_detail",
 			"confirm": "TMPLta_confirm",
-			"backdrop": "TMPLta_backdrop",
-			"body": "TMPLta_body"
+			"cancel": "TMPLta_cancel",
+			"card": "TMPLta_card",
+			"backdrop": "TMPLta_backdrop"
 		};
 		//#endregion
 		//#region src/client/RestartDialog.tsx
@@ -163,11 +163,11 @@ window.__ModuleLoader__.load({
 			document.head.appendChild(tag);
 		}
 		var RestartRow_module_css_default = {
-			"title": "U45rSq_title",
-			"desc": "U45rSq_desc",
 			"action": "U45rSq_action",
 			"row": "U45rSq_row",
-			"rowText": "U45rSq_rowText"
+			"desc": "U45rSq_desc",
+			"rowText": "U45rSq_rowText",
+			"title": "U45rSq_title"
 		};
 		//#endregion
 		//#region src/client/RestartRow.tsx
@@ -356,6 +356,20 @@ window.__ModuleLoader__.load({
 			ctx.on("connection/reset", () => {
 				store.close();
 			});
+			const armReattachFlag = () => {
+				try {
+					sessionStorage.setItem(REATTACH_FLAG, "1");
+				} catch {}
+			};
+			ctx.effect(() => {
+				const onKeyDown = (event) => {
+					if (event.key === "F5") armReattachFlag();
+				};
+				window.addEventListener("keydown", onKeyDown);
+				return () => {
+					window.removeEventListener("keydown", onKeyDown);
+				};
+			}, "ui-settings-restart: f5 reattach arm");
 			const runRestart = async () => {
 				const result = await ctx.remote.restart.restart();
 				if (!result.ok) return {
@@ -375,9 +389,7 @@ window.__ModuleLoader__.load({
 				};
 			};
 			const runRefresh = async () => {
-				try {
-					sessionStorage.setItem(REATTACH_FLAG, "1");
-				} catch {}
+				armReattachFlag();
 				window.location.reload();
 				return {
 					ok: true,

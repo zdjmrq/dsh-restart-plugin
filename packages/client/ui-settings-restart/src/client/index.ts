@@ -58,6 +58,27 @@ export function apply(ctx: ClientContext): void {
   // A reconnect means the backend already restarted: reset the dialog.
   ctx.on('connection/reset', () => { store.close() })
 
+  const armReattachFlag = (): void => {
+    try {
+      sessionStorage.setItem(REATTACH_FLAG, '1')
+    } catch {
+      // Storage refusal must not block the refresh itself.
+    }
+  }
+
+  // F5 gets the same behavior as the "refresh frontend" action: arm the
+  // one-shot re-attach flag BEFORE the browser's native reload so
+  // creation-mode hot plugins survive the refresh. The page receives keydown
+  // first, then the browser performs its default reload — the flag only has
+  // to be in sessionStorage by that point, so no preventDefault is needed.
+  ctx.effect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'F5') armReattachFlag()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => { window.removeEventListener('keydown', onKeyDown) }
+  }, 'ui-settings-restart: f5 reattach arm')
+
   const runRestart = async (): Promise<{ ok: boolean; text: string }> => {
     const result = await ctx.remote.restart.restart()
     if (!result.ok) return { ok: false, text: result.error.message }
@@ -73,11 +94,7 @@ export function apply(ctx: ClientContext): void {
   }
 
   const runRefresh = async (): Promise<{ ok: boolean; text: string }> => {
-    try {
-      sessionStorage.setItem(REATTACH_FLAG, '1')
-    } catch {
-      // Storage refusal must not block the refresh itself.
-    }
+    armReattachFlag()
     window.location.reload()
     return { ok: true, text: '' }
   }
