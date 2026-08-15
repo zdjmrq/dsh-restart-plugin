@@ -44,6 +44,10 @@ pnpm --filter @deepseek-ai/dsh-client-ui-cordis bundle
 - DeepSeek Harness 源码工作区（本插件按 `0.1.0-rc.5` 版结构集成）
 - Node.js 22+、pnpm
 
+## 相关项目
+
+- [zdjmrq/deepseek-harness](https://github.com/zdjmrq/deepseek-harness) — 官方 DeepSeek Harness 的个人 fork，**内置本插件**以及 `command-guard` 防误删 / `careful-full-access` 沙箱模式的全部改动。想一次性获得两个插件的完整功能：直接克隆该 fork → `pnpm install` → `pnpm run build` → `pnpm dsh web`，无需任何补丁。本仓库的 `install.patch` 仅用于把「关闭/刷新前端」功能单独装进其它 harness 工作区。
+
 ## License
 
 MIT
