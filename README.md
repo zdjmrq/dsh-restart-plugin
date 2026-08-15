@@ -47,7 +47,6 @@ pnpm --filter @deepseek-ai/dsh-client-ui-cordis bundle
 ## 相关项目（双向互链）
 
 - [dsh-plugin-suite](https://github.com/zdjmrq/dsh-plugin-suite) — 定制插件套件（局部 fork），**内置本插件**与 `dsh-careful-full-access` 命令守卫（防误删）的完整累计补丁 `install.patch`。想一次性获得两个插件的全部功能：克隆上游 → `git checkout 47f943859b` → `git apply install.patch` → `pnpm install` → `pnpm run build` → `pnpm dsh web`。本仓库的 `install.patch` 仅用于把「关闭/刷新前端」功能单独装进其它 harness 工作区；
-- [dsh-careful-full-access](https://github.com/zdjmrq/dsh-careful-full-access) — 「命令守卫 + careful-full-access 沙箱模式」插件；
 - [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) — 官方上游。
 
 ## License
