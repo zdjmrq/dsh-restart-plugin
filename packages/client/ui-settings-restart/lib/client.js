@@ -19,13 +19,13 @@ window.__ModuleLoader__.load({
 		}
 		var RestartDialog_module_css_default = {
 			"card": "TMPLta_card",
-			"detail": "TMPLta_detail",
-			"body": "TMPLta_body",
-			"actions": "TMPLta_actions",
-			"confirm": "TMPLta_confirm",
+			"backdrop": "TMPLta_backdrop",
 			"cancel": "TMPLta_cancel",
+			"body": "TMPLta_body",
 			"title": "TMPLta_title",
-			"backdrop": "TMPLta_backdrop"
+			"detail": "TMPLta_detail",
+			"actions": "TMPLta_actions",
+			"confirm": "TMPLta_confirm"
 		};
 		//#endregion
 		//#region src/client/RestartDialog.tsx
@@ -163,10 +163,10 @@ window.__ModuleLoader__.load({
 			document.head.appendChild(tag);
 		}
 		var RestartRow_module_css_default = {
-			"row": "U45rSq_row",
-			"desc": "U45rSq_desc",
-			"title": "U45rSq_title",
 			"rowText": "U45rSq_rowText",
+			"row": "U45rSq_row",
+			"title": "U45rSq_title",
+			"desc": "U45rSq_desc",
 			"action": "U45rSq_action"
 		};
 		//#endregion
@@ -362,9 +362,13 @@ window.__ModuleLoader__.load({
 				} catch {}
 			};
 			ctx.effect(() => {
-				const isRefreshShortcut = (event) => event.key === "F5" || event.key.toLowerCase() === "r" && event.ctrlKey && !event.altKey && !event.metaKey;
 				const onKeyDown = (event) => {
-					if (isRefreshShortcut(event)) armReattachFlag();
+					const isPlainF5 = event.key === "F5" && !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey;
+					const isPlainCtrlR = event.key.toLowerCase() === "r" && event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey;
+					if (!isPlainF5 && !isPlainCtrlR) return;
+					armReattachFlag();
+					event.preventDefault();
+					window.location.reload();
 				};
 				window.addEventListener("keydown", onKeyDown);
 				return () => {

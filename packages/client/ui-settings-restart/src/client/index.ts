@@ -66,18 +66,21 @@ export function apply(ctx: ClientContext): void {
     }
   }
 
-  // F5 (and Ctrl+R, for keyboards where F5 sits behind the Fn layer) get the
-  // same behavior as the "refresh frontend" action: arm the one-shot
-  // re-attach flag BEFORE the browser's native reload so creation-mode hot
-  // plugins survive the refresh. The page receives keydown first, then the
-  // browser performs its default reload — the flag only has to be in
-  // sessionStorage by that point, so no preventDefault is needed.
+  // F5 and Ctrl+R keep the "refresh frontend" behavior: arm the one-shot
+  // re-attach flag, then force the reload from the page itself. preventDefault
+  // + location.reload() makes the refresh work even where the browser's own
+  // F5 default action is suppressed (desktop shells, embedded views), while
+  // Ctrl+Shift+R (cache-bypassing force reload) is deliberately left native.
   ctx.effect(() => {
-    const isRefreshShortcut = (event: KeyboardEvent): boolean =>
-      event.key === 'F5'
-      || (event.key.toLowerCase() === 'r' && event.ctrlKey && !event.altKey && !event.metaKey)
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (isRefreshShortcut(event)) armReattachFlag()
+      const isPlainF5 = event.key === 'F5'
+        && !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey
+      const isPlainCtrlR = event.key.toLowerCase() === 'r'
+        && event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey
+      if (!isPlainF5 && !isPlainCtrlR) return
+      armReattachFlag()
+      event.preventDefault()
+      window.location.reload()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => { window.removeEventListener('keydown', onKeyDown) }
