@@ -66,18 +66,22 @@ export function apply(ctx: ClientContext): void {
     }
   }
 
-  // F5 gets the same behavior as the "refresh frontend" action: arm the
-  // one-shot re-attach flag BEFORE the browser's native reload so
-  // creation-mode hot plugins survive the refresh. The page receives keydown
-  // first, then the browser performs its default reload — the flag only has
-  // to be in sessionStorage by that point, so no preventDefault is needed.
+  // F5 (and Ctrl+R, for keyboards where F5 sits behind the Fn layer) get the
+  // same behavior as the "refresh frontend" action: arm the one-shot
+  // re-attach flag BEFORE the browser's native reload so creation-mode hot
+  // plugins survive the refresh. The page receives keydown first, then the
+  // browser performs its default reload — the flag only has to be in
+  // sessionStorage by that point, so no preventDefault is needed.
   ctx.effect(() => {
+    const isRefreshShortcut = (event: KeyboardEvent): boolean =>
+      event.key === 'F5'
+      || (event.key.toLowerCase() === 'r' && event.ctrlKey && !event.altKey && !event.metaKey)
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'F5') armReattachFlag()
+      if (isRefreshShortcut(event)) armReattachFlag()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => { window.removeEventListener('keydown', onKeyDown) }
-  }, 'ui-settings-restart: f5 reattach arm')
+  }, 'ui-settings-restart: refresh-shortcut reattach arm')
 
   const runRestart = async (): Promise<{ ok: boolean; text: string }> => {
     const result = await ctx.remote.restart.restart()

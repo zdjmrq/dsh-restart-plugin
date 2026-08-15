@@ -18,13 +18,13 @@ window.__ModuleLoader__.load({
 			document.head.appendChild(tag);
 		}
 		var RestartDialog_module_css_default = {
-			"actions": "TMPLta_actions",
-			"title": "TMPLta_title",
-			"body": "TMPLta_body",
+			"card": "TMPLta_card",
 			"detail": "TMPLta_detail",
+			"body": "TMPLta_body",
+			"actions": "TMPLta_actions",
 			"confirm": "TMPLta_confirm",
 			"cancel": "TMPLta_cancel",
-			"card": "TMPLta_card",
+			"title": "TMPLta_title",
 			"backdrop": "TMPLta_backdrop"
 		};
 		//#endregion
@@ -163,11 +163,11 @@ window.__ModuleLoader__.load({
 			document.head.appendChild(tag);
 		}
 		var RestartRow_module_css_default = {
-			"action": "U45rSq_action",
 			"row": "U45rSq_row",
 			"desc": "U45rSq_desc",
+			"title": "U45rSq_title",
 			"rowText": "U45rSq_rowText",
-			"title": "U45rSq_title"
+			"action": "U45rSq_action"
 		};
 		//#endregion
 		//#region src/client/RestartRow.tsx
@@ -362,14 +362,15 @@ window.__ModuleLoader__.load({
 				} catch {}
 			};
 			ctx.effect(() => {
+				const isRefreshShortcut = (event) => event.key === "F5" || event.key.toLowerCase() === "r" && event.ctrlKey && !event.altKey && !event.metaKey;
 				const onKeyDown = (event) => {
-					if (event.key === "F5") armReattachFlag();
+					if (isRefreshShortcut(event)) armReattachFlag();
 				};
 				window.addEventListener("keydown", onKeyDown);
 				return () => {
 					window.removeEventListener("keydown", onKeyDown);
 				};
-			}, "ui-settings-restart: f5 reattach arm");
+			}, "ui-settings-restart: refresh-shortcut reattach arm");
 			const runRestart = async () => {
 				const result = await ctx.remote.restart.restart();
 				if (!result.ok) return {
